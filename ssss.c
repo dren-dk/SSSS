@@ -50,8 +50,9 @@
 
 #include <gmp.h>
 
-#define VERSION "0.5"
-#define RANDOM_SOURCE "/dev/random"
+#define VERSION "0.5u"
+#define RANDOM_SOURCE "/dev/urandom"
+#define NOMLOCK 1
 #define MAXDEGREE 1024
 #define MAXTOKENLEN 128
 #define MAXLINELEN (MAXTOKENLEN + 1 + 10 + 1 + MAXDEGREE / 4 + 10)
@@ -171,7 +172,7 @@ void field_print(FILE* stream, const mpz_t x, int hexmode)
     size_t t;
     unsigned int i;
     int printable, warn = 0;
-    memset(buf, degree / 8 + 1, 0);
+    memset(buf, 0, degree / 8 + 1);
     mpz_export(buf, &t, 1, 1, 0, 0, x);
     for(i = 0; i < t; i++) {
       printable = (buf[i] >= 32) && (buf[i] < 127);
@@ -560,8 +561,9 @@ int main(int argc, char *argv[])
 #endif
 
   if (getuid() != geteuid())
-    seteuid(getuid());
-
+    if (seteuid(getuid())) 
+      warning("Failed to seteuid");
+   
   tcgetattr(0, &echo_orig);
   echo_off = echo_orig;
   echo_off.c_lflag &= ~ECHO;
